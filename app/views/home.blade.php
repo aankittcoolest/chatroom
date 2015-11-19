@@ -68,7 +68,8 @@
 
               <tbody>
 
-                {{ Form::open(array('url' => 'register-chatroom'))}}
+
+                {{ Form::open(array('class' => '', 'method' => 'post', 'action' => array('ChatRoomsController@registerChatroom', $available_chat_room->id, 1))) }}
                 {{ Form::hidden('chatroom_id', $available_chat_room->id) }}
                   <tr>
                     <td>{{ $available_chat_room->name }}</td>

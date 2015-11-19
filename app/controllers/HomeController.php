@@ -3,7 +3,7 @@
 class HomeController extends BaseController {
 
 	public function showWelcome() {
-			$this->getInvitedChatRoomDetails();
+
 			$message = '';
 			//getting a flash message when a new chat room is created
 			if (Session::has('message'))

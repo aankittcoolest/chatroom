@@ -3,7 +3,6 @@
 class MemberController extends BaseController {
 
   public function getOnlineChatMembers($id) {
-    $online_members = '';
     $online_chat_members_id = 	ChatRoomMember::getOnlineChatMembers($id);
     $total_online_members_id =  SessionHandle::getOnlineMembersIds();
 

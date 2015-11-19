@@ -26,9 +26,10 @@ private $message_id = '';
 
   public function joinRoom($id) {
     $room_details = ChatRoomPeer::getChatRoomDetailsById($id);
-    //var_dump($room_details);die();
-
-   return View::make('chatrooms.joinChat', array('room_details' => $room_details));
+    if(!$room_details) {
+      return Redirect::route('home');
+    }
+   return   ChatRoomMember::userChatRoomValidityCheck($id) ? View::make('chatrooms.joinChat', array('room_details' => $room_details)) : Redirect::route('home');
   }
 
   //get the frame via frame call
@@ -117,13 +118,14 @@ public function updateMessage($id) {
 
 
 
-public function registerChatroom($chatroom_id = NULL, $accept = NULL) {
-  if($accept == false) {
-    InviteMember::deleteInvite($chatroom_id);
-    return Redirect::route('home');
-  } elseif( $accept == true) {
-    InviteMember::deleteInvite($chatroom_id);
-  }
+public function registerChatroom($chatroom_id, $accept) {
+   if($accept == false) {
+     InviteMember::deleteInvite($chatroom_id);
+     return Redirect::route('home');
+   } elseif( $accept == true) {
+     InviteMember::deleteInvite($chatroom_id);
+   }
+
 
   if(!$chatroom_id) {
       $chatroom_id = Input::get('chatroom_id');

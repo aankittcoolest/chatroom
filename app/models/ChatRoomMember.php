@@ -40,6 +40,12 @@ class ChatRoomMember extends Eloquent {
       return self::whereIn('member_id', $user_ids)
                   ->update(array('is_active' => 0));
   }
+
+  public static function userChatRoomValidityCheck($chatroom_id) {
+      return  self::where('chatroom_id', $chatroom_id)
+                ->where('member_id', Auth::user()->id)
+                ->first();
+  }
 }
 
 
