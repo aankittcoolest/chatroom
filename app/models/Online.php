@@ -51,6 +51,11 @@ class Online extends Model {
         ));
     }
 
+    public function scopeDeleteOldUserSession($query)
+    {
+      return $query->where('user_id', Auth::user()->id)->delete();
+    }
+
     /**
      * Returns the user that belongs to this entry.
      *

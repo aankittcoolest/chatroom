@@ -138,13 +138,6 @@ Route::group(array('before' => 'auth'), function() {
 		)
 );
 
-	Route::get('chatrooms/create-chatrooms',
-	array(
-		'as'	=> 'new-chatroom',
-		'uses' => 'ChatRoomsController@getNewChatRoom'
-	)
-	 );
-
 	Route::post('create-chatroom',
 			array(
 				'as'	=>	'create-chatroom',
@@ -176,12 +169,53 @@ Route::group(array('before' => 'auth'), function() {
 				'uses'	=> 'ChatRoomsController@joinRoom'
 			));
 
-			Route::post('register-chatroom/',
+			Route::match(array('GET', 'POST'), 'register-chatroom/{chatroom_id?}/accept={accept?}',
 				array(
 					'as'	=> 'register-chatroom',
 					'uses'	=> 'ChatRoomsController@registerChatroom'
 				));
 
+			Route::get('online-chat-members/{id}',
+				array(
+					'as'	=> 'online-chat-members',
+					'uses'	=> 'MemberController@getOnlineChatMembers'
+				));
+
+			Route::get('online-nonchat-members/{id}',
+				array(
+					'as'	=> 'online-nonchat-members',
+					'uses'	=> 'MemberController@getOnlineNonChatMembers'
+				));
+
+			Route::get('offline-chat-members/{id}',
+				array(
+					'as'	=> 'offline-chat-members',
+					'uses'	=> 'MemberController@getOfflineChatMembers'
+				));
+
+			Route::get('offline-nonchat-members/{id}',
+				array(
+					'as'	=> 'offline-nonchat-members',
+					'uses'	=> 'MemberController@getOfflineNonChatMembers'
+				));
+
+				Route::get('invite-member/{id}/chatroom={chatroom_id}',
+					array(
+						'as'	=> 'invite_member',
+						'uses'	=> 'InviteController@inviteMember'
+					));
+
+				Route::get('check-invite/{id}/chatroom={chatroom_id}',
+					array(
+						'as'	=> 'invite_member',
+						'uses'	=> 'InviteController@checkInvited'
+					));
+
+				Route::get('get-inviter/{id}/chatroom={chatroom_id}',
+					array(
+						'as'	=> 'invite_member',
+						'uses'	=> 'InviteController@getInviterDetails'
+					));
 
 
 

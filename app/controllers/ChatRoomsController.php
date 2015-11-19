@@ -5,24 +5,6 @@ class ChatRoomsController extends BaseController {
 private $chatroom_id = '';
 private $message_id = '';
 
-  public function getChatRooms() {
-    $registered = Online::registered()->get();
-
-
-          $data = DB::table('chat_rooms')
-            		      ->whereNotIn('id', function($query) {
-            			           $query->select('chatroom_id')
-                             ->from('chatroom_member')
-            				        ->where('member_id', Auth::user()->id);
-            		  })->get();
-
-      return View::make('chatrooms.showChatRooms', array('chatrooms' => $data));
-  }
-
-  public function getNewChatRoom() {
-      return View::make('chatrooms.createChatRoom');
-  }
-
   public function createChatRoom() {
     $valid = Validator::make(Input::all(),
       array(
@@ -33,78 +15,49 @@ private $message_id = '';
       return Redirect::route('home')->withErrors($valid)->withInput();
     }
     $chatroom_name = Input::get('name');
-    ChatRoom::create(array(
-      'name' => $chatroom_name,
-      'file' => str_random(40)
-    ));
-    return Redirect::route('home');
-
+    $chat_room_id =     ChatRoom::insertGetId(array(
+                        'name' => $chatroom_name,
+                        'file' => str_random(40)
+                      ));
+    Session::put('message', 'New chatroom has been added successfully');
+    return $this->registerChatroom($chat_room_id);
   }
 
+
+  public function joinRoom($id) {
+    $room_details = ChatRoomPeer::getChatRoomDetailsById($id);
+    //var_dump($room_details);die();
+
+   return View::make('chatrooms.joinChat', array('room_details' => $room_details));
+  }
+
+  //get the frame via frame call
   public function joinChatRoom($id) {
+       if($this->setAndValidateChatSession($id)){
+          return View::make('chatrooms.sessionExpired');
+       };
 
-    $message_status = new MessageStatus;
-    if(Request::isMethod('post')) {
-        $message = Input::get('message');
-        if($message) {
-          //insert the message in the db
-          $message_id =   Message::insertGetId(
-              array(
-                  'message' => $message,
-                  'member_id' => Auth::user()->id,
-                  'chatroom_id' => $id
-              ));
-          //get list of active members in the group
-          $active_chatroom_members = ChatRoomMember::select()
-                                    ->where('chatroom_id', $id)
-                                    ->lists('id');
-
-          //update message status of all active members
-          foreach($active_chatroom_members as $active_chatroom_member) {
-
-              $message_status->member_id    = $active_chatroom_member;
-              $message_status->chatroom_id  = $id;
-              $message_status->message_id   = $message_id;
-              $message_status->is_read      = 0;
-              $message_status->save();
-          }
-        }
-        $this->getMessages($id);
-    }
-    // $message_status->where('member_id','=', Auth::user()->id)
-    //               ->delete();
-
-
-    // $messages = Message::select('message', 'created_at')
-    //             ->where('chatroom_id', $id)
-    //             ->orderBy('id', 'desc')
-    //             ->take(10)
-    //             ->lists('message', 'created_at');
-
-              $data =   DB::table('messages')
-                ->join('users', 'messages.member_id', '=', 'users.id')
-                ->orderBy('messages.id', 'desc')
-                ->take(10)
-                ->get(array('messages.message','users.first_name', 'users.id'));
-
-                $data = array_reverse($data);
-
-
-  //  $messages = array_reverse($messages);
-
+    $data = $this->getMessages($id);
     return View::make('chatrooms.joinChatRoom2', array('messages' => $data, 'chatroom'=> 'join-chatroom/'.$id));
   }
 
-private function deleteReadMessages() {
-  // //delete read messages from message status table
-  // $message_status->where('member_id','=', Auth::user()->id)
-  //               ->delete();
-  // var_dump("Messages updated successfully");
-  // die();
-}
+  private function setAndValidateChatSession($id) {
+    session_start();
+    if(!isset($_SESSION['timestamp'.$id])) {
+      $_SESSION['timestamp'.$id] = time();
+      ChatRoomMember::updateUserCurrentChatroomStatus(1, $id);
+    }
+      if(time() - $_SESSION['timestamp'.$id] > 100) {
+        session_unset();     // unset $_SESSION variable for the run-time
+        session_destroy();
+        ChatRoomMember::updateUserCurrentChatroomStatus(0, $id);
+        return true;
+      }
+  }
+
 
 public function getMessages($id) {
-  $messages = '';
+
    $messages_id = MessageStatus::select('message_id')
                 ->where('chatroom_id', '=', $id)
                 ->where('member_id', '=', Auth::user()->id)
@@ -114,27 +67,21 @@ public function getMessages($id) {
         if($messages_id) {
           MessageStatus::whereIn('message_id',$messages_id)
                         ->update(array('is_read' => 1));
-
-            $messages = Message::select('message')
-                      ->whereIn('id',$messages_id)
-                      ->lists('message');
-
         }
-      return $messages;
+        $data =   DB::table('messages')
+          ->join('users', 'messages.member_id', '=', 'users.id')
+          ->where('messages.chatroom_id', '=', $id)
+          ->orderBy('messages.id', 'desc')
+          ->take(40)
+          ->get(array('messages.message','users.first_name', 'users.id'));
 
+          $data = array_reverse($data);
+      return $data;
 
-
-  $messages = Message::select('message', 'created_at')
-              ->where('chatroom_id', $id)
-              ->orderBy('id', 'desc')
-              ->take(10)
-              ->lists('message', 'created_at');
-
-  $messages = array_reverse($messages);
-  return $messages;
 }
 
 public function updateMessage($id) {
+
   //$message_status = new MessageStatus;
   if(Request::isMethod('post')) {
       $message = Input::get('message');
@@ -152,7 +99,7 @@ public function updateMessage($id) {
           $active_chatroom_members = ChatRoomMember::select()
                                     ->where('chatroom_id', $id)
                                     ->where('member_id', '<>', Auth::user()->id)
-                                    ->lists('id');
+                                    ->lists('member_id');
 
           //update message status of all active members
       $message_status = new MessageStatus;        foreach($active_chatroom_members as $active_chatroom_member) {
@@ -168,19 +115,28 @@ public function updateMessage($id) {
   }
 }
 
-public function joinRoom($id) {
- return View::make('chatrooms.joinChat', array('chatroom_id' => $id));
-}
 
-public function registerChatroom() {
-  $chatroom_id = Input::get('chatroom_id');
 
-$register_room = new ChatRoomMember;
-$register_room->member_id = Auth::user()->id;
-$register_room->chatroom_id = $chatroom_id;
-$register_room->save();
+public function registerChatroom($chatroom_id = NULL, $accept = NULL) {
+  if($accept == false) {
+    InviteMember::deleteInvite($chatroom_id);
+    return Redirect::route('home');
+  } elseif( $accept == true) {
+    InviteMember::deleteInvite($chatroom_id);
+  }
 
-return Redirect::route('show-chatrooms');
+  if(!$chatroom_id) {
+      $chatroom_id = Input::get('chatroom_id');
+  }
+  if($chatroom_id) {
+    $register_room = new ChatRoomMember;
+    $register_room->member_id = Auth::user()->id;
+    $register_room->chatroom_id = $chatroom_id;
+    $register_room->is_active = 0;
+    $register_room->save();
+  }
+
+return Redirect::route('home');
 
 }
 
