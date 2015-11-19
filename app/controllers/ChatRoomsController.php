@@ -118,7 +118,7 @@ public function updateMessage($id) {
 
 
 
-public function registerChatroom($chatroom_id, $accept) {
+public function registerChatroom($chatroom_id, $accept = null) {
    if($accept == false) {
      InviteMember::deleteInvite($chatroom_id);
      return Redirect::route('home');
