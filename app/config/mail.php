@@ -28,7 +28,7 @@ return array(
 	|
 	*/
 
-	'host' => 'smtp.gmail.com',
+	'host' => 'smtp.yandex.com',
 
 	/*
 	|--------------------------------------------------------------------------
@@ -54,7 +54,7 @@ return array(
 	|
 	*/
 
-	'from' => array('address' => 'ilovetowriteprograms@gmail.com', 'name' => null),
+	'from' => array('address' => 'aankittcoolest@yandex.com', 'name' => null),
 
 	/*
 	|--------------------------------------------------------------------------
@@ -80,7 +80,7 @@ return array(
 	|
 	*/
 
-	'username' => 'ilovetowriteprograms@gmail.com',
+	'username' => 'aankittcoolest@yandex.com',
 
 	/*
 	|--------------------------------------------------------------------------
